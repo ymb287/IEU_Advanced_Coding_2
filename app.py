@@ -19,20 +19,32 @@ debt_long = df.melt(id_vars=['Country Name', 'Country Code', 'Series Name', 'Ser
 debt_long = debt_long.dropna(subset = 'Debt')
 debt_long.loc[:, 'Date'] = debt_long['Date'].str.split(' ').str[0]
 debt_long.reset_index(drop=True, inplace=True)
-# TODO More cleaning needed?
 
 # Exercise 2
 def extract_data(country, date):
     df = debt_long[(debt_long['Country Name'] == country) & (debt_long['Date'] == date)]
-    dictionary = {
-        'Total  Internal': df[df['Series Code'] == 'DP.DOD.DECD.CR.PS.CD']['Debt'].iloc[0],
-        'Total External': df[df['Series Code'] == 'DP.DOD.DECX.CR.PS.CD']['Debt'].iloc[0],
-        'Local Currency': df[df['Series Code'] == 'DP.DOD.DECN.CR.PS.CD']['Debt'].iloc[0],
-        'Foreign Currency': df[df['Series Code'] == 'DP.DOD.DECF.CR.PS.CD']['Debt'].iloc[0],
-        'Short Term Debt': df[df['Series Code'] == 'DP.DOD.DSTC.CR.PS.CD']['Debt'].iloc[0],
-        'Long Term Debt': df[df['Series Code'] == 'DP.DOD.DLTC.CR.PS.CD']['Debt'].iloc[0]
-    }
-    return dictionary
+    if not df.empty:
+        series_mapping = {
+            'Total Internal': 'DP.DOD.DECD.CR.PS.CD',
+            'Total External': 'DP.DOD.DECX.CR.PS.CD',
+            'Local Currency': 'DP.DOD.DECN.CR.PS.CD',
+            'Foreign Currency': 'DP.DOD.DECF.CR.PS.CD',
+            'Short Term Debt': 'DP.DOD.DSTC.CR.PS.CD',
+            'Long Term Debt': 'DP.DOD.DLTC.CR.PS.CD'}
+
+        dictionary = {}
+
+        for key, series_code in series_mapping.items():
+            series_data = df[df['Series Code'] == series_code]
+            if not series_data.empty:
+                dictionary[key] = series_data['Debt'].iloc[0]
+            else:
+                dictionary[key] = None
+        
+        return dictionary
+
+    else:
+        return {'Error': 'No data available for the selected country and date.'}
 
 # Exercise 3
 def get_countries(debt_type, date):
@@ -41,24 +53,33 @@ def get_countries(debt_type, date):
     dict_countries = {}
     for index, row in df.iterrows():
         dict_countries[row['Country Name']] = row['Debt']
-    return dict_countries
+    if not dict_countries:
+        return {'Error': 'No data available for the selected debt type and date.'}
+    else:
+        return dict_countries
 
 # Exercise 4
-def pie_cart_internal_external(country, date):
+def pie_chart_internal_external(country, date):
     df = debt_long[(debt_long['Country Name'] == country) & (debt_long['Date'] == date)]
-    internal_debt  = df[df['Series Code'] == 'DP.DOD.DECD.CR.PS.CD']['Debt'].iloc[0]
-    external_debt =  df[df['Series Code'] == 'DP.DOD.DECX.CR.PS.CD']['Debt'].iloc[0]
-    labels = ['Internal Debt', 'External Debt']
-    sizes = [internal_debt, external_debt]
+    internal_debt_data  = df[df['Series Code'] == 'DP.DOD.DECD.CR.PS.CD']
+    external_debt_data =  df[df['Series Code'] == 'DP.DOD.DECX.CR.PS.CD']
 
-    fig, ax = plt.subplots(figsize=(6, 6))
-    sns.set(style="whitegrid")
-    plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140, colors=['lightblue', 'lightcoral'])
-    plt.title(f'Debt Composition for {country} in {date[:4]} in {date[-2:]}')
-    # Show the legend at the bottom with the amount of debt
-    plt.legend(loc='lower right', shadow=True, ncol=1)
-    plt.show()
-    st.pyplot(fig)
+    if internal_debt_data.empty or external_debt_data.empty:
+        st.error(f'No data available for Internal or External Debt for {country} on {date}.')
+    else:
+        internal_debt = internal_debt_data['Debt'].iloc[0]
+        external_debt = external_debt_data['Debt'].iloc[0]
+        labels = ['Internal Debt', 'External Debt']
+        sizes = [internal_debt, external_debt]
+
+        fig, ax = plt.subplots(figsize=(6, 6))
+        sns.set(style="whitegrid")
+        plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140, colors=['lightblue', 'lightcoral'])
+        plt.title(f'Debt Composition for {country} in {date[:4]} in {date[-2:]}')
+        # Show the legend at the bottom with the amount of debt
+        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), shadow=True, ncol=1)
+        plt.show()
+        st.pyplot(fig)
 
 # Exercise 5
 def pie_chart_all_debt(country, date):
@@ -68,6 +89,24 @@ def pie_chart_all_debt(country, date):
 
 # Exercise 6
 def line_chart_countries(countries, debt_type):
+
+    # Filter data for the selected countries and debt type
+    debt_type_df = debt_long[debt_long['Series Code'] == debt_type]
+    countries_with_debt = debt_type_df['Country Name'].tolist()
+
+    # Check if one country form the list is in the list of countries with debt
+    countries_available = [country for country in countries if country in countries_with_debt]
+    if not countries_available:
+        st.warning(f"No data available for the selected debt type and countires ")
+        return
+
+    # Check if the selected countries are available for the selected debt type
+    countries_not_available = [country for country in countries if country not in countries_with_debt]
+    if countries_not_available:
+        not_available_str = ', '.join(countries_not_available)
+        st.warning(f"The debt type is not available for the following countries: {not_available_str}")
+
+
     fig, ax = plt.subplots(figsize=(12, 8))
     plt.title(f'Evolution of {debt_type} for {", ".join(countries)}', fontsize=16)
     sns.set(style="whitegrid")
@@ -85,6 +124,24 @@ def line_chart_countries(countries, debt_type):
 
 # Exercise 7
 def line_chart_debt_types(country, debt_types):
+
+    # Filter data for the selected country and debt types
+    country_df = debt_long[debt_long['Country Name'] == country]
+    debt_types_available = country_df['Series Code'].tolist()
+
+    # Check if one debt type form the list is in the list of debts types with the given country
+    debt_types_available = [debt_type for debt_type in debt_types if debt_type in debt_types_available]
+    if not debt_types_available:
+        st.warning(f"No data available for the selected debt types and countire")
+        return
+
+    # Check if the selected debt types are available for the selected country
+    debt_types_not_available = [debt_type for debt_type in debt_types if debt_type not in debt_types_available]
+    if debt_types_not_available:
+        not_available_str = ', '.join(debt_types_not_available)
+        st.warning(f"The selected country does not have the following debt types: {not_available_str}")
+
+
     fig, ax = plt.subplots(figsize=(12, 8))
     sns.set(style="whitegrid")
     plt.title(f'Evolution of Debt Types for {country}', fontsize=16)
@@ -103,6 +160,34 @@ def line_chart_debt_types(country, debt_types):
 
 # Exercise 8
 def box_plot_countries(countries, debt_types):
+
+    # Get unique countries and debt types in the entire DataFrame, for the selected other value
+    debt_df = debt_long[debt_long['Country Name'].isin(countries)]
+    country_df = debt_long[debt_long['Series Code'].isin(debt_types)]
+
+    available_countries = country_df['Country Name'].unique()
+    available_debt = debt_long['Series Code'].unique()
+
+    # Check if there are selected countries or debt types that do not have a match in the DataFrame
+    missing_countries = [country for country in countries if country not in available_countries]
+    missing_debt_types = [debt_type for debt_type in debt_types if debt_type not in available_debt]
+
+    # Check if there is data available for the selected debt types and countries
+    selected_df = debt_long[(debt_long['Country Name'].isin(countries)) & (debt_long['Series Code'].isin(debt_types))]
+    if selected_df.empty:
+        st.warning("No data available for the selected countries and debt types.")
+        return
+
+    # Optionally, you can display a warning message for missing countries or debt types
+    if missing_countries:
+        st.warning(f"The following countries do not have a match in the data: {missing_countries}")
+    if missing_debt_types:
+        st.warning(f"The following debt types do not have a match in the data: {missing_debt_types}")
+
+
+
+
+
     # Filter data for the selected countries and debt types
     filtered_data = debt_long[(debt_long['Country Name'].isin(countries)) & (debt_long['Series Code'].isin(debt_types))]
     # Create a box plot
@@ -154,40 +239,54 @@ with st.sidebar:
     st.info("This project displayes govermental debt.")
 
 
-if choice == 'Excersice 1':
+if choice == 'Exercise 1':
     st.subheader("Exercise 1")
     # Display Exercise 1 result
-    print(2)
     st.write(debt_long)
-    print(2)
     
 if choice == 'Exercise 2':
     st.subheader("Exercise 2")
-    # Get user input for Exercise 2
-    country_input = st.text_input("Enter country:", "Uganda")
-    date_input = st.text_input("Enter date (e.g. 2019Q3):", "2019Q3")
+    # Get countries
+    unique_countries = debt_long['Country Name'].unique()
+    country_input = st.selectbox("Select country:", unique_countries)
+    # Get dates
+    unique_dates_for_country = debt_long[debt_long['Country Name'] == country_input]['Date'].unique()
+    date_input = st.selectbox("Select date:", unique_dates_for_country)
     # Display Exercise 2 result
     result = extract_data(country_input, date_input)
-    st.write(result)
-    print(extract_data('Uganda', '2019Q3'))
+    if 'error' in result:
+        st.error(result['error'])
+    else:
+        st.write(result)
 
 if choice == 'Exercise 3':
     st.subheader("Exercise 3")
-    # Get user input for Exercise 3
-    country_input = st.text_input("Enter Debt type:", "DP.DOD.DECD.CR.PS.CD")
-    date_input = st.text_input("Enter date (e.g. 2019Q3):", "2019Q3")
-    # Display Exercise 2 result
-    result = get_countries(country_input, date_input)
+    # Get countries
+    unique_debt_type = debt_long['Series Code'].unique()
+    debt_type = st.selectbox("Select Debt Type:", unique_debt_type)
+    # Get dates
+    unique_dates_for_debt = debt_long[debt_long['Series Code'] == debt_type]['Date'].unique()
+    date_input = st.selectbox("Select date:", unique_dates_for_debt)
+    # Display Exercise 3 result
+    result = get_countries(debt_type, date_input)
     st.write(result)
 
+# Exercise 4
 if choice == 'Exercise 4':
     st.subheader("Exercise 4")
-    # Get user input for Exercise 4
-    country_input = st.text_input("Enter country:", "Uganda")
-    date_input = st.text_input("Enter date (e.g., 2019Q3):", "2019Q3")
+    
+    # Get  countries
+    unique_countries = debt_long['Country Name'].unique()
+    country_input = st.selectbox("Select Country:", unique_countries)
+
+    # Get unique dates for the selected country
+    unique_dates_for_country = debt_long[debt_long['Country Name'] == country_input]['Date'].unique()
+    date_input = st.selectbox("Select date:", unique_dates_for_country)
 
     # Display Exercise 4 result
-    pie_cart_internal_external(country_input, date_input)
+    pie_chart_internal_external(country_input, date_input)
+
+
 
 if choice == 'Exercise 5':
     st.subheader("Exercise 5")
@@ -196,36 +295,56 @@ if choice == 'Exercise 5':
     # Display Exercise 5 result
     pie_chart_all_debt()
 
+
 if choice == 'Exercise 6':
     st.subheader("Exercise 6")
-    # Get user input for Exercise 6
-    countries_input = st.text_input("Enter countries (comma-separated):", "Mexico,Canada,St. Lucia")
-    debt_type_input = st.text_input("Enter debt type:", "DP.DOD.DECD.CR.PS.CD")
-    countries_list = [country.strip() for country in countries_input.split(',')]
+    # Get countries
+    unique_countries = debt_long['Country Name'].unique()
+    default_countries = ['Australia']
+    countries_list = st.multiselect("Select countries:", unique_countries, default=default_countries)
+
+    # Get debt with available data for at least one of the selected countries
+    countries_df = debt_long[debt_long['Country Name'].isin(countries_list)]
+    available_debt_types = countries_df['Series Code'].unique()
+    debt_type_input = st.selectbox("Select debt type:", available_debt_types, index=0)
 
     # Display Exercise 6 result
     line_chart_countries(countries_list, debt_type_input)
 
-    # TODO look at 'Australia' or 'Mexico' do we need to clean the data or those just strange spikes?
 
 
 if choice == 'Exercise 7':
     st.subheader("Exercise 7")
-    # Get user input for Exercise 7
-    country_input = st.text_input("Enter country:", "Canada")
-    debt_types_input = st.text_input("Enter debt types (comma-separated):", "DP.DOD.DECD.CR.PS.CD,DP.DOD.DECX.CR.PS.CD,DP.DOD.DECT.CR.PS.CD")
-    debt_types_list = [debt_type.strip() for debt_type in debt_types_input.split(',')]
+
+    # Get debt
+    unique_debt_type = debt_long['Series Code'].unique()
+    default_debt = ['DP.DOD.DECD.CR.PS.CD']
+    debt_types_list = st.multiselect("Select debt:", unique_debt_type, default=default_debt)
+
+    # Get countries with available data for at least one of the selected debt types
+    countries_df = debt_long[debt_long['Series Code'].isin(debt_types_list)]
+    available_contries = countries_df['Country Name'].unique()
+    country_input = st.selectbox("Select Country:", available_contries, index=0)
+
     # Display Exercise 7 result
     line_chart_debt_types(country_input, debt_types_list)
 
+
 if choice == 'Exercise 8':
     st.subheader("Exercise 8")
-    # Get user input for Exercise 8
-    countries_input = st.text_input("Enter countries (comma-separated):", "Mexico,Canada")
-    debt_types_input = st.text_input("Enter debt types (comma-separated):", "DP.DOD.DECD.CR.PS.CD,DP.DOD.DECX.CR.PS.CD,DP.DOD.DECT.CR.PS.CD")
-    countries_to_plot = [country.strip() for country in countries_input.split(',')]
-    debt_types_to_plot = [debt_type.strip() for debt_type in debt_types_input.split(',')]
+
+    # Get countries
+    unique_countries = debt_long['Country Name'].unique()
+    default_countries = ['Australia']
+    countries_list = st.multiselect("Select countries:", unique_countries, default=default_countries)
+
+    # Get debt with available data for at least one of the selected countries
+    countries_df = debt_long[debt_long['Country Name'].isin(countries_list)]
+    available_debt_types = countries_df['Series Code'].unique()
+    default_debt = available_debt_types[0]
+    debt_types_list = st.multiselect("Select debt:", available_debt_types, default=default_debt)
+
     # Display Exercise 8 result
-    box_plot_countries(countries_to_plot, debt_types_to_plot)
+    box_plot_countries(countries_list, debt_types_list)
 
 
