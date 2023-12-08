@@ -84,8 +84,25 @@ def pie_chart_internal_external(country, date):
 # Exercise 5
 def pie_chart_all_debt(country, date):
     df = debt_long[(debt_long['Country Name'] == country) & (debt_long['Date'] == date)]
+    if df.empty:
+        st.error(f'No data available for {country} on {date}.')
+        return
+    else:
+        # drop rows with 0
+        df = df[df['Debt'] != 0]
+        sizes = df['Debt'].tolist()
+        labels = df['Series Code'].tolist()
 
-   # TODO Create Function, what should we display?
+        fig, ax = plt.subplots(figsize=(6, 6))
+        sns.set(style="whitegrid")
+        plt.pie(sizes, labels=labels, autopct='%1.1f%%')
+        plt.title(f'Debt Composition for {country} in {date[:4]} in {date[-2:]}')
+        # Show the legend at the bottom with the amount of debt
+        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), shadow=True, ncol=1)
+        plt.show()
+        st.pyplot(fig)
+
+
 
 # Exercise 6
 def line_chart_countries(countries, debt_type):
@@ -291,9 +308,16 @@ if choice == 'Exercise 4':
 if choice == 'Exercise 5':
     st.subheader("Exercise 5")
     # Get user input for Exercise 5
+    # Get  countries
+    unique_countries = debt_long['Country Name'].unique()
+    country_input = st.selectbox("Select Country:", unique_countries)
+
+    # Get unique dates for the selected country
+    unique_dates_for_country = debt_long[debt_long['Country Name'] == country_input]['Date'].unique()
+    date_input = st.selectbox("Select date:", unique_dates_for_country)
 
     # Display Exercise 5 result
-    pie_chart_all_debt()
+    pie_chart_all_debt(country_input, date_input)
 
 
 if choice == 'Exercise 6':
