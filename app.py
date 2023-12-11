@@ -82,7 +82,7 @@ def pie_chart_internal_external(country, date):
         st.pyplot(fig)
 
 # Exercise 5
-def pie_chart_all_debt(country, date):
+def barchart_all(country, date):
     df = debt_long[(debt_long['Country Name'] == country) & (debt_long['Date'] == date)]
     if df.empty:
         st.error(f'No data available for {country} on {date}.')
@@ -95,10 +95,18 @@ def pie_chart_all_debt(country, date):
 
         fig, ax = plt.subplots(figsize=(6, 6))
         sns.set(style="whitegrid")
-        plt.pie(sizes, labels=labels, autopct='%1.1f%%')
-        plt.title(f'Debt Composition for {country} in {date[:4]} in {date[-2:]}')
-        # Show the legend at the bottom with the amount of debt
-        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), shadow=True, ncol=1)
+        sns.barplot(x=labels, y=sizes, palette="muted")
+
+        plt.title(f'Debt Composition for {country} in {date[:4]} in {date[-2:]}', fontsize=16)
+        plt.xlabel('Debt Category', fontsize=12)
+        plt.ylabel('Debt Amount', fontsize=12)
+
+        plt.yscale('log')
+        plt.xticks(rotation=90, ha='right')
+
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+        sns.despine(left=True, bottom=True)
+
         plt.show()
         st.pyplot(fig)
 
