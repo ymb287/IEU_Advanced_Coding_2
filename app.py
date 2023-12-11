@@ -325,7 +325,7 @@ if choice == 'Exercise 5':
     date_input = st.selectbox("Select date:", unique_dates_for_country)
 
     # Display Exercise 5 result
-    pie_chart_all_debt(country_input, date_input)
+    barchart_all(country_input, date_input)
 
 
 if choice == 'Exercise 6':
