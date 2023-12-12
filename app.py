@@ -8,15 +8,16 @@ st.set_page_config(layout="wide")
 st.markdown("""<style>#MainMenu {visibility: hidden;}footer {visibility: hidden;}</style>""", unsafe_allow_html=True) 
 
 if os.path.exists('./debt.csv'): 
-    df = pd.read_csv('debt.csv', index_col=None)
+    debt = pd.read_csv('debt.csv')
 
 ########################################
 # The Functions for the exercises are defined here.
 ########################################
 
 # Exercise 1
-debt_long = df.melt(id_vars=['Country Name', 'Country Code', 'Series Name', 'Series Code'], var_name='Date', value_name='Debt')
-debt_long = debt_long.dropna(subset = 'Debt')
+debt_long = debt.melt(id_vars=['Country Name', 'Country Code', 'Series Name', 'Series Code'], var_name='Date', value_name='Debt')
+debt_long.dropna(subset = 'Debt', inplace=True)
+debt_long = debt_long[debt_long['Debt'] != 0]
 debt_long.loc[:, 'Date'] = debt_long['Date'].str.split(' ').str[0]
 debt_long.reset_index(drop=True, inplace=True)
 
@@ -64,8 +65,9 @@ def pie_chart_internal_external(country, date):
     internal_debt_data  = df[df['Series Code'] == 'DP.DOD.DECD.CR.PS.CD']
     external_debt_data =  df[df['Series Code'] == 'DP.DOD.DECX.CR.PS.CD']
 
-    if internal_debt_data.empty or external_debt_data.empty:
-        st.error(f'No data available for Internal or External Debt for {country} on {date}.')
+    if internal_debt_data.empty and external_debt_data.empty:
+        st.error(f'No data available for Internal and External Debt for {country} in {date}.')
+        return
     else:
         internal_debt = internal_debt_data['Debt'].iloc[0]
         external_debt = external_debt_data['Debt'].iloc[0]
@@ -80,6 +82,7 @@ def pie_chart_internal_external(country, date):
         plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), shadow=True, ncol=1)
         plt.show()
         st.pyplot(fig)
+        return 
 
 # Exercise 5
 def barchart_all(country, date):
@@ -88,28 +91,20 @@ def barchart_all(country, date):
         st.error(f'No data available for {country} on {date}.')
         return
     else:
-        # drop rows with 0
-        df = df[df['Debt'] != 0]
         sizes = df['Debt'].tolist()
         labels = df['Series Code'].tolist()
-
         fig, ax = plt.subplots(figsize=(6, 6))
-        sns.set(style="whitegrid")
-        sns.barplot(x=labels, y=sizes, palette="muted")
-
+        ax.bar(labels, sizes, color=sns.color_palette("muted"))
         plt.title(f'Debt Composition for {country} in {date[:4]} in {date[-2:]}', fontsize=16)
         plt.xlabel('Debt Category', fontsize=12)
         plt.ylabel('Debt Amount', fontsize=12)
-
         plt.yscale('log')
-        plt.xticks(rotation=90, ha='right')
-
-        plt.grid(axis='y', linestyle='--', alpha=0.7)
+        plt.xticks(rotation=90, ha='center', fontsize=7)
+        plt.grid(axis='y', linestyle='', alpha=0.7)
         sns.despine(left=True, bottom=True)
-
         plt.show()
         st.pyplot(fig)
-
+        return
 
 
 # Exercise 6
@@ -122,7 +117,8 @@ def line_chart_countries(countries, debt_type):
     # Check if one country form the list is in the list of countries with debt
     countries_available = [country for country in countries if country in countries_with_debt]
     if not countries_available:
-        st.warning(f"No data available for the selected debt type and countires ")
+        countries_str = ", ".join(countries)
+        st.warning(f"No data available for the debt type {debt_type} in {countries_str}")
         return
 
     # Check if the selected countries are available for the selected debt type
@@ -157,14 +153,14 @@ def line_chart_debt_types(country, debt_types):
     # Check if one debt type form the list is in the list of debts types with the given country
     debt_types_available = [debt_type for debt_type in debt_types if debt_type in debt_types_available]
     if not debt_types_available:
-        st.warning(f"No data available for the selected debt types and countire")
+        st.warning(f"No data available for {country} and the debt types {debt_types_str}")
         return
 
     # Check if the selected debt types are available for the selected country
     debt_types_not_available = [debt_type for debt_type in debt_types if debt_type not in debt_types_available]
     if debt_types_not_available:
         not_available_str = ', '.join(debt_types_not_available)
-        st.warning(f"The selected country does not have the following debt types: {not_available_str}")
+        st.warning(f"{country} does not have the following debt types: {not_available_str}")
 
 
     fig, ax = plt.subplots(figsize=(12, 8))
@@ -178,7 +174,7 @@ def line_chart_debt_types(country, debt_types):
     plt.yscale('log')
     plt.xlim(country_data['Date'].iloc[0], country_data['Date'].iloc[-1])
     plt.gca().xaxis.set_major_locator(plt.MultipleLocator(4))
-    plt.legend(title='Debt Types', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.legend(title='Debt Types')
     plt.show()
     st.pyplot(fig)
 
@@ -189,7 +185,6 @@ def box_plot_countries(countries, debt_types):
     # Get unique countries and debt types in the entire DataFrame, for the selected other value
     debt_df = debt_long[debt_long['Country Name'].isin(countries)]
     country_df = debt_long[debt_long['Series Code'].isin(debt_types)]
-
     available_countries = country_df['Country Name'].unique()
     available_debt = debt_long['Series Code'].unique()
 
@@ -198,43 +193,38 @@ def box_plot_countries(countries, debt_types):
     missing_debt_types = [debt_type for debt_type in debt_types if debt_type not in available_debt]
 
     # Check if there is data available for the selected debt types and countries
-    selected_df = debt_long[(debt_long['Country Name'].isin(countries)) & (debt_long['Series Code'].isin(debt_types))]
-    if selected_df.empty:
-        st.warning("No data available for the selected countries and debt types.")
+    filtered_data = debt_long[(debt_long['Country Name'].isin(countries)) & (debt_long['Series Code'].isin(debt_types))]
+    if filtered_data.empty:
+        countries_str = ', '.join(countries)
+        debt_types_str = ', '.join(debt_types)
+        st.warning(f"The combination of {countries_str} and {debt_types_str} does not have any data available.")
         return
 
     # Optionally, you can display a warning message for missing countries or debt types
     if missing_countries:
-        st.warning(f"The following countries do not have a match in the data: {missing_countries}")
+        missing_countries_str = ', '.join(missing_countries)
+        st.warning(f"The following countries are not in the data: {missing_countries_str}")
     if missing_debt_types:
-        st.warning(f"The following debt types do not have a match in the data: {missing_debt_types}")
+        missing_debt_types_str = ', '.join(missing_debt_types)
+        st.warning(f"The following debt types are not in the data: {missing_debt_types_str}")
 
-
-
-
-
-    # Filter data for the selected countries and debt types
-    filtered_data = debt_long[(debt_long['Country Name'].isin(countries)) & (debt_long['Series Code'].isin(debt_types))]
-    # Create a box plot
     fig, ax = plt.subplots(figsize=(12, 8))
-    sns.set(style="whitegrid")
-    palette = sns.color_palette("muted")
     plt.title(f'Box Plot of Debt for {", ".join(countries)}', fontsize=16)
-    sns.boxplot(x='Country Name', y='Debt', hue='Series Code', data=filtered_data, palette=palette)
-    plt.xticks(rotation=90)
+    sns.boxplot(x='Country Name', y='Debt', hue='Series Code', data=filtered_data, palette='muted')
     plt.xlabel('Country')
     plt.ylabel('Debt')
     plt.yscale('log')
     plt.legend(title='Debt Type')
     plt.show()
+
     st.pyplot(fig)
 
 
 
-########################################
-# The following Code provides a Streamlit interface for the project.
-# Every exercise gets a seperate page.
-########################################
+# ---------------------------------------------------------------------------- #
+#       The following Code provides a Streamlit interface for the project.
+#                       Every exercise gets a seperate page.
+# ---------------------------------------------------------------------------- #
 
 st.markdown(
     """
@@ -246,8 +236,10 @@ st.markdown(
             max-height: 100px;
             max-width: 100px;
         }
-</style>
-    
+        span[data-baseweb="tag"] {
+            background-color: grey !important;
+        }
+    </style>
     """,
     unsafe_allow_html=True,
 )
@@ -315,7 +307,6 @@ if choice == 'Exercise 4':
 
 if choice == 'Exercise 5':
     st.subheader("Exercise 5")
-    # Get user input for Exercise 5
     # Get  countries
     unique_countries = debt_long['Country Name'].unique()
     country_input = st.selectbox("Select Country:", unique_countries)
