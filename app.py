@@ -78,7 +78,6 @@ def pie_chart_internal_external(country, date):
         sns.set(style="whitegrid")
         plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140, colors=['lightblue', 'lightcoral'])
         plt.title(f'Debt Composition for {country} in {date[:4]} in {date[-2:]}')
-        # Show the legend at the bottom with the amount of debt
         plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), shadow=True, ncol=1)
         plt.show()
         st.pyplot(fig)
@@ -221,6 +220,9 @@ def box_plot_countries(countries, debt_types):
 #                       Every exercise gets a seperate page.
 # ---------------------------------------------------------------------------- #
 
+
+
+# Set the page layout
 st.markdown(
     """
     <style>
@@ -251,8 +253,9 @@ with st.sidebar:
     st.info("This project displayes govermental debt.")
 
 
-##########################################################################################
 
+
+# Create the pages for the different exercises#
 if choice == 'Exercise 1':
     st.subheader("Exercise 1")
     # Display Exercise 1 result
@@ -288,15 +291,12 @@ if choice == 'Exercise 3':
 # Exercise 4
 if choice == 'Exercise 4':
     st.subheader("Exercise 4")
-    
     # Get  countries
     unique_countries = debt_long['Country Name'].unique()
     country_input = st.selectbox("Select Country:", unique_countries)
-
     # Get unique dates for the selected country
     unique_dates_for_country = debt_long[debt_long['Country Name'] == country_input]['Date'].unique()
     date_input = st.selectbox("Select date:", unique_dates_for_country)
-
     # Display Exercise 4 result
     pie_chart_internal_external(country_input, date_input)
 
@@ -307,11 +307,9 @@ if choice == 'Exercise 5':
     # Get  countries
     unique_countries = debt_long['Country Name'].unique()
     country_input = st.selectbox("Select Country:", unique_countries)
-
     # Get unique dates for the selected country
     unique_dates_for_country = debt_long[debt_long['Country Name'] == country_input]['Date'].unique()
     date_input = st.selectbox("Select date:", unique_dates_for_country)
-
     # Display Exercise 5 result
     barchart_all(country_input, date_input)
 
@@ -322,12 +320,10 @@ if choice == 'Exercise 6':
     unique_countries = debt_long['Country Name'].unique()
     default_countries = ['Australia']
     countries_list = st.multiselect("Select countries:", unique_countries, default=default_countries)
-
     # Get debt with available data for at least one of the selected countries
     countries_df = debt_long[debt_long['Country Name'].isin(countries_list)]
     available_debt_types = countries_df['Series Code'].unique()
     debt_type_input = st.selectbox("Select debt type:", available_debt_types, index=0)
-
     # Display Exercise 6 result
     line_chart_countries(countries_list, debt_type_input)
 
@@ -335,35 +331,29 @@ if choice == 'Exercise 6':
 
 if choice == 'Exercise 7':
     st.subheader("Exercise 7")
-
     # Get debt
     unique_debt_type = debt_long['Series Code'].unique()
     default_debt = ['DP.DOD.DECD.CR.PS.CD']
     debt_types_list = st.multiselect("Select debt:", unique_debt_type, default=default_debt)
-
     # Get countries with available data for at least one of the selected debt types
     countries_df = debt_long[debt_long['Series Code'].isin(debt_types_list)]
     available_contries = countries_df['Country Name'].unique()
     country_input = st.selectbox("Select Country:", available_contries, index=0)
-
     # Display Exercise 7 result
     line_chart_debt_types(country_input, debt_types_list)
 
 
 if choice == 'Exercise 8':
     st.subheader("Exercise 8")
-
     # Get countries
     unique_countries = debt_long['Country Name'].unique()
     default_countries = ['Australia']
     countries_list = st.multiselect("Select countries:", unique_countries, default=default_countries)
-
     # Get debt with available data for at least one of the selected countries
     countries_df = debt_long[debt_long['Country Name'].isin(countries_list)]
     available_debt_types = countries_df['Series Code'].unique()
     default_debt = available_debt_types[0]
     debt_types_list = st.multiselect("Select debt:", available_debt_types, default=default_debt)
-
     # Display Exercise 8 result
     box_plot_countries(countries_list, debt_types_list)
 
