@@ -10,9 +10,9 @@ st.markdown("""<style>#MainMenu {visibility: hidden;}footer {visibility: hidden;
 if os.path.exists('./debt.csv'): 
     debt = pd.read_csv('debt.csv')
 
-########################################
-# The Functions for the exercises are defined here.
-########################################
+# ---------------------------------------------------------------------------- #
+#               The Functions for the exercises are defined here.
+# ---------------------------------------------------------------------------- #
 
 # Exercise 1
 debt_long = debt.melt(id_vars=['Country Name', 'Country Code', 'Series Name', 'Series Code'], var_name='Date', value_name='Debt')
@@ -106,7 +106,6 @@ def barchart_all(country, date):
         st.pyplot(fig)
         return
 
-
 # Exercise 6
 def line_chart_countries(countries, debt_type):
 
@@ -126,7 +125,6 @@ def line_chart_countries(countries, debt_type):
     if countries_not_available:
         not_available_str = ', '.join(countries_not_available)
         st.warning(f"The debt type is not available for the following countries: {not_available_str}")
-
 
     fig, ax = plt.subplots(figsize=(12, 8))
     plt.title(f'Evolution of {debt_type} for {", ".join(countries)}', fontsize=16)
@@ -162,7 +160,6 @@ def line_chart_debt_types(country, debt_types):
         not_available_str = ', '.join(debt_types_not_available)
         st.warning(f"{country} does not have the following debt types: {not_available_str}")
 
-
     fig, ax = plt.subplots(figsize=(12, 8))
     sns.set(style="whitegrid")
     plt.title(f'Evolution of Debt Types for {country}', fontsize=16)
@@ -177,7 +174,6 @@ def line_chart_debt_types(country, debt_types):
     plt.legend(title='Debt Types')
     plt.show()
     st.pyplot(fig)
-
 
 # Exercise 8
 def box_plot_countries(countries, debt_types):
@@ -216,7 +212,6 @@ def box_plot_countries(countries, debt_types):
     plt.yscale('log')
     plt.legend(title='Debt Type')
     plt.show()
-
     st.pyplot(fig)
 
 
@@ -255,6 +250,8 @@ with st.sidebar:
     choice = st.radio("Navigation", ['Exercise 1', 'Exercise 2', 'Exercise 3', 'Exercise 4', 'Exercise 5', 'Exercise 6', 'Exercise 7', 'Exercise 8'])
     st.info("This project displayes govermental debt.")
 
+
+##########################################################################################
 
 if choice == 'Exercise 1':
     st.subheader("Exercise 1")
