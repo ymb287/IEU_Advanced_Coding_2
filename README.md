@@ -14,3 +14,5 @@ The Python script (`app.py`) has the functions from the Jupyter Notebook and int
 ```bash
 streamlit run app.py
 ```
+
+Or under [this](https://ieuadvancedcoding2-j24fsitwtbfwejvs6iby7g.streamlit.app) link hostd on Streamlit Community Cloud.
