@@ -100,7 +100,7 @@ def barchart_all(country, date):
         plt.yscale('log')
         plt.xticks(rotation=90, ha='center', fontsize=7)
         plt.grid(axis='y', linestyle='', alpha=0.7)
-        sns.despine(left=True, bottom=True)
+        sns.despine(right=True, top=True)
         plt.show()
         st.pyplot(fig)
         return
