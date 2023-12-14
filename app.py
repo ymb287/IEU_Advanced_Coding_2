@@ -96,7 +96,7 @@ def barchart_all(country, date):
         ax.bar(labels, sizes, color=sns.color_palette("muted"))
         plt.title(f'Debt Composition for {country} in {date[:4]} in {date[-2:]}', fontsize=16)
         plt.xlabel('Debt Category', fontsize=12)
-        plt.ylabel('Debt Amount', fontsize=12)
+        plt.ylabel('Log Debt', fontsize=12)
         plt.yscale('log')
         plt.xticks(rotation=90, ha='center', fontsize=7)
         plt.grid(axis='y', linestyle='', alpha=0.7)
@@ -132,7 +132,7 @@ def line_chart_countries(countries, debt_type):
     sns.lineplot(x='Date', y='Debt',hue = 'Country Name', data=country_data, palette='muted')
     plt.xticks(rotation=90)
     plt.xlabel('Date')
-    plt.ylabel('Debt')
+    plt.ylabel('Log Debt')
     plt.yscale('log')
     plt.xlim(country_data['Date'].iloc[0], country_data['Date'].iloc[-1])
     plt.gca().xaxis.set_major_locator(plt.MultipleLocator(4))
@@ -166,7 +166,7 @@ def line_chart_debt_types(country, debt_types):
     sns.lineplot(x='Date', y='Debt', hue='Series Code', data=country_data, palette='muted')
     plt.xticks(rotation=90)
     plt.xlabel('Date')
-    plt.ylabel('Debt')
+    plt.ylabel('Log Debt')
     plt.yscale('log')
     plt.xlim(country_data['Date'].iloc[0], country_data['Date'].iloc[-1])
     plt.gca().xaxis.set_major_locator(plt.MultipleLocator(4))
@@ -181,7 +181,7 @@ def box_plot_countries(countries, debt_types):
     debt_df = debt_long[debt_long['Country Name'].isin(countries)]
     country_df = debt_long[debt_long['Series Code'].isin(debt_types)]
     available_countries = country_df['Country Name'].unique()
-    available_debt = debt_long['Series Code'].unique()
+    available_debt = debt_df['Series Code'].unique()
 
     # Check if there are selected countries or debt types that do not have a match in the DataFrame
     missing_countries = [country for country in countries if country not in available_countries]
@@ -207,7 +207,7 @@ def box_plot_countries(countries, debt_types):
     plt.title(f'Box Plot of Debt for {", ".join(countries)}', fontsize=16)
     sns.boxplot(x='Country Name', y='Debt', hue='Series Code', data=filtered_data, palette='muted')
     plt.xlabel('Country')
-    plt.ylabel('Debt')
+    plt.ylabel('Log Debt')
     plt.yscale('log')
     plt.legend(title='Debt Type')
     plt.show()
