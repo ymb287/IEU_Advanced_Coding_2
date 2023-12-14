@@ -79,6 +79,7 @@ def pie_chart_internal_external(country, date):
     plt.title(f'Debt Composition for {country} in {date[:4]} in {date[-2:]}')
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), shadow=True, ncol=1)
     plt.show()
+    st.pyplot(fig)
     return
 
 # Exercise 5
