@@ -65,16 +65,17 @@ def pie_chart_internal_external(country, date):
     internal_debt_data  = df[df['Series Code'] == 'DP.DOD.DECD.CR.PS.CD']
     external_debt_data =  df[df['Series Code'] == 'DP.DOD.DECX.CR.PS.CD']
     if internal_debt_data.empty and external_debt_data.empty:
-        return print(f'No data available for Internal and External Debt for {country} in {date}.')
+        st.error(f'No data available for Internal and External Debt for {country} in {date}.')
+        return
     if internal_debt_data.empty:
-        print(f'No data available for Internal Debt for {country} in {date}.')
+        st.warning(f'No data available for Internal Debt for {country} in {date}.')
     if external_debt_data.empty:
-        print(f'No data available for External Debt for {country} in {date}.')
+        st.warning(f'No data available for External Debt for {country} in {date}.')
     internal_debt = internal_debt_data['Debt'].iloc[0]
     external_debt = external_debt_data['Debt'].iloc[0]
     labels = ['Internal Debt', 'External Debt']
     debts = [internal_debt, external_debt]
-    plt.subplots(figsize=(6, 6))
+    fig, ax = plt.subplots(figsize=(6, 6))
     plt.pie(debts, labels=labels, autopct='%1.1f%%', startangle=140, colors=['lightblue', 'lightcoral'])
     plt.title(f'Debt Composition for {country} in {date[:4]} in {date[-2:]}')
     plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), shadow=True, ncol=1)
